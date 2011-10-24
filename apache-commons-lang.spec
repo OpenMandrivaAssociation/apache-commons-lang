@@ -4,7 +4,7 @@
 
 Name:           apache-%{short_name}
 Version:        2.6
-Release:        4
+Release:        3
 Summary:        Provides a host of helper utilities for the java.lang API
 License:        ASL 2.0
 Group:          Development/Java
@@ -13,15 +13,15 @@ Source0:        http://archive.apache.org/dist/commons/%{base_name}/source/%{sho
 Patch0:         0001-Make-source-version-1.3.patch
 BuildArch:      noarch
 BuildRequires:  java-devel >= 0:1.6.0
-BuildRequires:  jpackage-utils >= 0:1.7.5
+BuildRequires:  jpackage-utils >= 0:1.7.2
 BuildRequires:  maven-site-plugin
 BuildRequires:  maven
 BuildRequires:  apache-commons-parent
 
 Requires:       java >= 0:1.6.0
-Requires:       jpackage-utils >= 0:1.7.5
-Requires(post):    jpackage-utils >= 0:1.7.5
-Requires(postun):  jpackage-utils >= 0:1.7.5
+Requires:       jpackage-utils >= 0:1.6
+Requires(post):    jpackage-utils
+Requires(postun):  jpackage-utils
 
 
 # This should go away with F-17
@@ -43,7 +43,7 @@ as hashCode, toString and equals.
 %package        javadoc
 Summary:        API documentation for %{name}
 Group:          Development/Java
-Requires:       jpackage-utils >= 0:1.7.5
+Requires:       jpackage-utils
 
 Obsoletes:      jakarta-%{short_name}-javadoc <= 0:2.4
 
