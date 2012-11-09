@@ -1,0 +1,35 @@
+From 4bdae0c8e87e64322753890a10bbbe5971d46bb6 Mon Sep 17 00:00:00 2001
+From: Stanislav Ochotnicky <sochotnicky@redhat.com>
+Date: Tue, 18 Jan 2011 13:43:08 +0100
+Subject: [PATCH] Make source version 1.3
+
+---
+ pom.xml |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/pom.xml b/pom.xml
+index 367d439..fa3db7b 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -458,6 +458,18 @@
+           <tarLongFileMode>gnu</tarLongFileMode>
+         </configuration>
+       </plugin>
++      <plugin>
++        <artifactId>maven-javadoc-plugin</artifactId>
++        <configuration>
++          <source>1.3</source>
++        </configuration>
++      </plugin>
++      <plugin>
++        <artifactId>maven-compiler-plugin</artifactId>
++        <configuration>
++          <source>1.3</source>
++        </configuration>
++      </plugin>
+     </plugins>
+   </build>
+ 
+-- 
+1.7.3.4
+
