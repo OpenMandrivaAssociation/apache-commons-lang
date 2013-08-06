@@ -4,7 +4,7 @@
 
 Name:           apache-%{short_name}
 Version:        2.6
-Release:        6
+Release:        7
 Summary:        Provides a host of helper utilities for the java.lang API
 License:        ASL 2.0
 Group:          Development/Java
@@ -14,8 +14,7 @@ Patch0:         0001-Make-source-version-1.3.patch
 BuildArch:      noarch
 BuildRequires:  java-devel >= 0:1.6.0
 BuildRequires:  jpackage-utils >= 0:1.7.2
-BuildRequires:  maven-site-plugin
-BuildRequires:  maven
+BuildRequires:	ant
 BuildRequires:  apache-commons-parent
 
 Requires:       java >= 0:1.6.0
@@ -56,7 +55,7 @@ Obsoletes:      jakarta-%{short_name}-javadoc <= 0:2.4
 sed -i 's/\r//' *.txt
 
 %build
-mvn-local install javadoc:javadoc
+ant dist
 
 %install
 
@@ -80,7 +79,7 @@ install -pm 644 pom.xml %{buildroot}%{_mavenpomdir}/JPP-%{short_name}.pom
 
 # javadoc
 install -d -m 755 %{buildroot}%{_javadocdir}/%{name}
-cp -pr target/site/apidocs/* %{buildroot}%{_javadocdir}/%{name}
+cp -pr target/apidocs/* %{buildroot}%{_javadocdir}/%{name}
 
 %pre javadoc
 # workaround for rpm bug, can be removed in F-17
