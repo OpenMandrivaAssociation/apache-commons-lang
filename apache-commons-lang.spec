@@ -4,7 +4,7 @@
 
 Name:           apache-%{short_name}
 Version:        2.6
-Release:        7
+Release:        8
 Summary:        Provides a host of helper utilities for the java.lang API
 License:        ASL 2.0
 Group:          Development/Java
