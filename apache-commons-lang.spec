@@ -1,10 +1,10 @@
-%_javapackages_macros
+%{?_javapackages_macros:%_javapackages_macros}
 %global base_name       lang
 %global short_name      commons-%{base_name}
 
 Name:           apache-%{short_name}
 Version:        2.6
-Release:        13.0%{?dist}
+Release:        13.1%{?dist}
 Summary:        Provides a host of helper utilities for the java.lang API
 License:        ASL 2.0
 
