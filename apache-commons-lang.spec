@@ -8,7 +8,7 @@ Release:        13.1%{?dist}
 Summary:        Provides a host of helper utilities for the java.lang API
 License:        ASL 2.0
 
-URL:            http://commons.apache.org/%{base_name}
+URL:            https://commons.apache.org/%{base_name}
 Source0:        http://archive.apache.org/dist/commons/%{base_name}/source/%{short_name}-%{version}-src.tar.gz
 Patch1:         0002-Fix-FastDateFormat-for-Java-7-behaviour.patch
 # FIXME commenting failing tests that probably should not fail...
