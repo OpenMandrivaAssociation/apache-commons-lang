@@ -1,140 +1,82 @@
-%{?_javapackages_macros:%_javapackages_macros}
-%global base_name       lang
-%global short_name      commons-%{base_name}
+%global base_name lang
+%global short_name commons-%{base_name}
 
-Name:           apache-%{short_name}
-Version:        2.6
-Release:        13.1%{?dist}
-Summary:        Provides a host of helper utilities for the java.lang API
-License:        ASL 2.0
+Name:		apache-%{short_name}
+Version:	2.6
+Release:	1
+Summary:	Helper utilities for the java.lang API
+Group:		Development/Java
+License:	ASL 2.0
+URL:		https://commons.apache.org/%{base_name}/
+Source0:	https://archive.apache.org/dist/commons/%{base_name}/source/%{short_name}-%{version}-src.tar.gz
+# LANG-719. Patterns of one or three 'Y's follow the Java 7 year rules.
+Patch1:		0002-Fix-FastDateFormat-for-Java-7-behaviour.patch
 
-URL:            https://commons.apache.org/%{base_name}
-Source0:        http://archive.apache.org/dist/commons/%{base_name}/source/%{short_name}-%{version}-src.tar.gz
-Patch1:         0002-Fix-FastDateFormat-for-Java-7-behaviour.patch
-# FIXME commenting failing tests that probably should not fail...
-Patch2:         %{name}-check.patch
+BuildArch:	noarch
+# Literal, so the first rpmbuild -bs records them before sysjar is installed.
+BuildRequires:	maven
+BuildRequires:	java-current-devel
+BuildSystem:	maven
+BuildOption(install):	--file-name %{short_name} --link %{name}
 
-BuildArch:      noarch
-BuildRequires:  maven-local
-BuildRequires:  apache-commons-parent
-BuildRequires:  maven-surefire-provider-junit
-
-Provides:       jakarta-commons-lang = 0:%{version}-%{release}
-Obsoletes:      jakarta-commons-lang <= 0:2.4
+Provides:	jakarta-%{short_name} = %{version}-%{release}
+Obsoletes:	jakarta-%{short_name} < %{version}-%{release}
 
 %description
-The standard Java libraries fail to provide enough methods for
-manipulation of its core classes. The Commons Lang Component provides
-these extra methods.
-The Commons Lang Component provides a host of helper utilities for the
-java.lang API, notably String manipulation methods, basic numerical
-methods, object reflection, creation and serialization, and System
-properties. Additionally it contains an inheritable enum type, an
-exception structure that supports multiple types of nested-Exceptions
-and a series of utilities dedicated to help with building methods, such
-as hashCode, toString and equals.
-
-%package        javadoc
-Summary:        API documentation for %{name}
-
-Obsoletes:      jakarta-%{short_name}-javadoc <= 0:2.4
-
-%description    javadoc
-%{summary}.
+Commons Lang adds helper methods for the classes in java.lang:
+string handling, numbers, reflection, and builders for equals,
+hashCode and toString. Gradle 8.11.1 links commons-lang:commons-lang.
 
 %prep
-%setup -q -n %{short_name}-%{version}-src
-%patch1 -p1
-%patch2 -p1
-sed -i 's/\r//' *.txt *.html
+%autosetup -n %{short_name}-%{version}-src -p1
+# org.apache.commons.lang.enum is a package name. javac rejects enum
+# as an identifier. The supported API is org.apache.commons.lang.enums.
+rm -rf src/main/java/org/apache/commons/lang/enum \
+	src/test/java/org/apache/commons/lang/enum
+# commons-parent 17 is rewritten onto a current parent, and that parent
+# pulls moditect, which is not packaged. Coordinates are already set on
+# this project. Entities.java is ISO-8859-1. JVMRandom.nextLong(long) is
+# static and clashes with RandomGenerator, so compile against the Java 8 API.
+python - <<'PY'
+import xml.etree.ElementTree as ET
 
-# "enum" is used as a Java identifier, which is prohibited in Java >= 1.5
-%pom_add_plugin org.apache.maven.plugins:maven-javadoc-plugin . "
-    <configuration><source>1.3</source></configuration>"
+ET.register_namespace("", "http://maven.apache.org/POM/4.0.0")
+ET.register_namespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
 
+def local(tag):
+    return tag.rsplit("}", 1)[-1]
 
-%mvn_file  : %{name} %{short_name}
-%mvn_alias : org.apache.commons: %{base_name}:%{base_name}
-# this package needs to be compiled with -source 1.3 option
-%mvn_config buildSettings/compilerSource 1.3
-
-%build
-%mvn_build
-
-%install
-%mvn_install
+tree = ET.parse("pom.xml")
+root = tree.getroot()
+ns = root.tag.split("}")[0] + "}" if root.tag.startswith("{") else ""
+for child in list(root):
+    if local(child.tag) == "parent":
+        root.remove(child)
+for parent in root.iter():
+    for child in list(parent):
+        if local(child.tag) != "plugin":
+            continue
+        artifact = next((c.text.strip() for c in child if local(c.tag) == "artifactId" and c.text), None)
+        if artifact == "maven-assembly-plugin":
+            parent.remove(child)
+for prop in list(root):
+    if local(prop.tag) != "properties":
+        continue
+    enc = rel = None
+    for child in prop:
+        name = local(child.tag)
+        if name == "project.build.sourceEncoding":
+            enc = child
+        elif name == "maven.compiler.release":
+            rel = child
+    if enc is None:
+        enc = ET.SubElement(prop, ns + "project.build.sourceEncoding")
+    enc.text = "ISO-8859-1"
+    if rel is None:
+        rel = ET.SubElement(prop, ns + "maven.compiler.release")
+    rel.text = "8"
+tree.write("pom.xml", xml_declaration=True, encoding="unicode")
+PY
 
 %files -f .mfiles
-%doc PROPOSAL.html LICENSE.txt RELEASE-NOTES.txt NOTICE.txt
-
-%files javadoc -f .mfiles-javadoc
-%doc LICENSE.txt NOTICE.txt
-
-%changelog
-* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.6-13
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
-
-* Mon Apr 22 2013 Michal Srb <msrb@redhat.com> - 2.6-12
-- Rebuild
-
-* Tue Apr 09 2013 Michal Srb <msrb@redhat.com> - 2.6-11
-- Properly specify XMvn's compilerSource option
-
-* Wed Feb 13 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.6-10
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
-
-* Wed Feb 06 2013 Java SIG <java-devel@lists.fedoraproject.org> - 2.6-9
-- Update for https://fedoraproject.org/wiki/Fedora_19_Maven_Rebuild
-- Replace maven BuildRequires with maven-local
-
-* Fri Jan 11 2013 Mikolaj Izdebski <mizdebsk@redhat.com> - 2.6-8
-- Build with xmvn
-
-* Wed Jul 18 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.6-7
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
-
-* Wed Feb 22 2012 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.6-6
-- Add backported fix for JDK 1.7
-
-* Thu Jan 12 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.6-5
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
-
-* Mon Jun 27 2011 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.6-4
-- Use new add_maven_depmap macro
-- Fix maven3 build
-
-* Mon Feb 07 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.6-3
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
-
-* Tue Jan 18 2011 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.6-2
-- Fix commons-lang symlink
-
-* Tue Jan 18 2011 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.6-1
-- Update to 2.6
-- Versionless jars & javadocs
-- Use maven 3 to build
-
-* Wed Nov 10 2010 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.5-7
-- Use apache-commons-parent instead of maven-*
-
-* Thu Jul  8 2010 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.5-6
-- Add license to javadoc subpackage
-
-* Wed May 26 2010 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.5-5
-- Add another old depmap to prevent groupId dependency problems
-
-* Fri May 21 2010 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.5-4
-- Correct depmap filename for backward compatibility
-
-* Mon May 17 2010 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.5-3
-- Fix maven depmap JPP name to short_name
-
-* Mon May 10 2010 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.5-2
-- Added export for MAVEN_LOCAL_REPO and mkdir
-- Added more add_to_maven_depmap to assure backward compatibility
-- Add symlink to short_name.jar
-
-* Mon May 10 2010 Stanislav Ochotnicky <sochotnicky@redhat.com> - 2.5-1
-- Rename and rebase of jakarta-commons-lang
-- Re-did whole spec file to use maven, dropped gcj support
-
+%doc LICENSE.txt NOTICE.txt RELEASE-NOTES.txt
